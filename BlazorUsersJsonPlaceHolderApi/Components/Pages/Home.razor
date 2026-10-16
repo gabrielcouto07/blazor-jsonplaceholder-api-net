@@ -1,0 +1,67 @@
+@page "/"
+@using BlazorUsersJsonPlaceHolderApi.Models
+@inject IHttpClientFactory HttpClientFactory
+
+<PageTitle>Usuários - JSONPlaceholder</PageTitle>
+
+<main>
+    <h1>Primeiro usuário da API</h1>
+
+    @if (erro is not null)
+    {
+        <p role="alert">@erro</p>
+    }
+    else if (carregando)
+    {
+        <p>Carregando usuário...</p>
+    }
+    else if (primeiroUsuario is not null)
+    {
+        <dl>
+            <dt>Nome</dt>
+            <dd>@primeiroUsuario.Name</dd>
+            <dt>Cidade</dt>
+            <dd>@primeiroUsuario.Address.City</dd>
+            <dt>Empresa</dt>
+            <dd>@primeiroUsuario.Company.Name</dd>
+        </dl>
+    }
+</main>
+
+@code {
+    private Usuario? primeiroUsuario;
+    private string? erro;
+    private bool carregando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("JsonPlaceHolder");
+            var usuarios = await client.GetFromJsonAsync<List<Usuario>>("users");
+            primeiroUsuario = usuarios?.FirstOrDefault();
+
+            if (primeiroUsuario is null)
+            {
+                erro = "A API não retornou usuários.";
+                return;
+            }
+
+            Console.WriteLine($"Nome: {primeiroUsuario.Name}");
+            Console.WriteLine($"Cidade: {primeiroUsuario.Address.City}");
+            Console.WriteLine($"Empresa: {primeiroUsuario.Company.Name}");
+        }
+        catch (HttpRequestException)
+        {
+            erro = "Não foi possível consultar a API. Tente novamente mais tarde.";
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            erro = "A API retornou dados inválidos.";
+        }
+        finally
+        {
+            carregando = false;
+        }
+    }
+}
